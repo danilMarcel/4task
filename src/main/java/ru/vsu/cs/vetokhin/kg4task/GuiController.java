@@ -8,11 +8,13 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.Control;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyEvent;
 import javafx.event.ActionEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
@@ -41,6 +43,9 @@ public class GuiController {
     private double lastMouseY;
     private boolean isMousePressed;
 
+
+    @FXML
+    public VBox camerasContainer;
 
     public TextField xCameraPosition;
     public TextField yCameraPosition;
@@ -99,26 +104,97 @@ public class GuiController {
 
     @FXML
     private void initialize() {
-        anchorPane.prefWidthProperty().addListener((ov, oldValue, newValue) -> canvas.setWidth(newValue.doubleValue()));
-        anchorPane.prefHeightProperty().addListener((ov, oldValue, newValue) -> canvas.setHeight(newValue.doubleValue()));
 
-        timeline = new Timeline();
-        timeline.setCycleCount(Animation.INDEFINITE);
 
-        KeyFrame frame = new KeyFrame(Duration.millis(15), event -> {
+        canvas.setFocusTraversable(true);
+        canvas.requestFocus();
+
+        timeline = new Timeline(new KeyFrame(Duration.seconds(0.015), event -> {
             double width = canvas.getWidth();
             double height = canvas.getHeight();
 
             canvas.getGraphicsContext2D().clearRect(0, 0, width, height);
-            cameraC.setAspectRatio((float) (width / height));
+            cameraC.setAspectRatio((float) (height / width));
 
-//            if (mesh != null) {
-//                RenderEngine.render(canvas.getGraphicsContext2D(), camera, mesh, (int) width, (int) height);
+            float[][] zBuffer = new float[(int) canvas.getHeight()][(int) canvas.getWidth()];
+            for (int k = 0; k < zBuffer.length; k++) {
+                for (int j = 0; j < zBuffer[0].length; j++) {
+                    zBuffer[k][j] = Float.MAX_VALUE;
+                }
+            }
+
+//            for (int i = 0; i < modelArrayList.size(); i++) {
+//
+//                if (modelArrayList.get(i) != null && enableModelMap.getOrDefault(i, true)) {
+//                    Color[][] colorByPixel;
+//                    if (modelArrayList.get(i).imageHelper != null) {
+//                        colorByPixel = modelArrayList.get(i).imageHelper.pixels;
+//                    }
+//                    else {
+//                        colorByPixel = null;
+//                    }
+//                    RenderEngine.render(canvas.getGraphicsContext2D(), cameraC, modelArrayList.get(i), (int) width, (int) height, trsParamsArrayList.get(i).getV1(), trsParamsArrayList.get(i).getV2(), trsParamsArrayList.get(i).getV3(), colorByPixel, zBuffer);
+//                }
 //            }
+
+            if (!cameraC.getPosition().equals(cameraPosition)) {
+                cameraPosition = new Vector3f(
+                        cameraC.getPosition().getX(),
+                        cameraC.getPosition().getY(),
+                        cameraC.getPosition().getZ()
+                );
+                xCameraPosition.setText(String.valueOf(cameraPosition.getX()));
+                yCameraPosition.setText(String.valueOf(cameraPosition.getY()));
+                zCameraPosition.setText(String.valueOf(cameraPosition.getZ()));
+            }
+
+            if (!cameraC.getTarget().equals(targetPosition)) {
+                targetPosition = new Vector3f(
+                        cameraC.getTarget().getX(),
+                        cameraC.getTarget().getY(),
+                        cameraC.getTarget().getZ()
+                );
+                xTargetPosition.setText(String.valueOf(targetPosition.getX()));
+                yTargetPosition.setText(String.valueOf(targetPosition.getY()));
+                zTargetPosition.setText(String.valueOf(targetPosition.getZ()));
+            }
+        }));
+
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
+
+
+        canvas.setOnMousePressed(mouseEvent -> {
+            canvas.requestFocus();
+            lastMouseX = mouseEvent.getX();
+            lastMouseY = mouseEvent.getY();
+            isMousePressed = true;
         });
 
-        timeline.getKeyFrames().add(frame);
-        timeline.play();
+        canvas.setOnMouseDragged(mouseEvent -> {
+            if (isMousePressed) {
+                double deltaX = mouseEvent.getX() - lastMouseX;
+                double deltaY = mouseEvent.getY() - lastMouseY;
+                mouseDrag(deltaX, deltaY, cameraC, ROTATION);
+                lastMouseX = mouseEvent.getX();
+                lastMouseY = mouseEvent.getY();
+            }
+        });
+
+        canvas.setOnMouseReleased(mouseEvent -> isMousePressed = false);
+        canvas.setOnScroll(scrollEvent -> mouseScroll(scrollEvent.getDeltaY(), cameraC, ZOOM));
+
+        cameraArrayList.add(cameraC);
+        Label modelNameLabel = new Label("Камера main");
+        modelNameLabel.setStyle("-fx-text-fill: white;");
+        Button moveToButton = new Button("Переместиться");
+
+        moveToButton.setOnAction(event -> {
+            cameraC = cameraArrayList.get(0);
+        });
+
+        HBox modelBox = new HBox(5, modelNameLabel, moveToButton);
+        camerasContainer.getChildren().add(modelBox);
     }
 
     public void positionChange(KeyEvent keyEvent) {
@@ -133,6 +209,47 @@ public class GuiController {
                 Float.parseFloat(xTargetPosition.getText()),
                 Float.parseFloat(yTargetPosition.getText()),
                 Float.parseFloat(zTargetPosition.getText()));
+    }
+
+
+    public void addCamera(ActionEvent actionEvent) {
+        Label cameraNameLabel = new Label("Камера: " + cameraCounter);
+        cameraNameLabel.setStyle("-fx-text-fill: white;");
+        Button deleteButton = new Button("Удалить");
+        Button moveToButton = new Button("Переместиться");
+
+
+        int currIndex = globalCameraIndex;
+        globalCameraIndex++;
+
+        moveToButton.setOnAction(event -> {
+            cameraC = cameraArrayList.get(currIndex);
+            currCameraIndex = currIndex;
+        });
+
+
+        deleteButton.setOnAction(event -> {
+            camerasContainer.getChildren().remove(deleteButton.getParent());
+            cameraCounter--;
+            if (currCameraIndex == currIndex) {
+                cameraC = cameraArrayList.get(0);
+            }
+            cameraArrayList.set(currIndex, nullCamera);
+        });
+
+        HBox cameraBox = new HBox(5, cameraNameLabel, deleteButton, moveToButton);
+        camerasContainer.getChildren().add(cameraBox);
+
+
+        cameraCounter++;
+
+        Camera newCam = new Camera(
+                new Vector3f(0, 0, 50),
+                new Vector3f(0, 0, 0),
+                1.0F, 1, 0.01F, 100);
+
+
+        cameraArrayList.add(newCam);
     }
 
 

@@ -42,20 +42,19 @@ public class Polygon {
         return normalIndices;
     }
 
-    @Override
-    public Polygon clone() {
-        try {
-            Polygon clonedPolygon = (Polygon) super.clone();
-
-            // Глубокое копирование списков
-            clonedPolygon.vertexIndices = new ArrayList<>(this.vertexIndices);
-            clonedPolygon.textureVertexIndices = new ArrayList<>(this.textureVertexIndices);
-            clonedPolygon.normalIndices = new ArrayList<>(this.normalIndices);
-
-            return clonedPolygon;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError(); // Этот код никогда не должен выполняться
-        }
-    }
+//    @Override
+//    public Polygon clone() {
+//        try {
+//            Polygon clonedPolygon = (Polygon) super.clone();
+//
+//            // Глубокое копирование списков
+//            clonedPolygon.vertexIndices = new ArrayList<>(this.vertexIndices);
+//            clonedPolygon.textureVertexIndices = new ArrayList<>(this.textureVertexIndices);
+//            clonedPolygon.normalIndices = new ArrayList<>(this.normalIndices);
+//
+//            return clonedPolygon;
+//        } catch (CloneNotSupportedException e) {
+//            throw new AssertionError(); // Этот код никогда не должен выполняться
+//        }
 
 }
