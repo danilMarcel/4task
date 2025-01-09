@@ -1,6 +1,7 @@
 package ru.vsu.cs.vetokhin.kg4task.math.matrices;
 
 
+import ru.vsu.cs.vetokhin.kg4task.math.vectors.Vector3f;
 import ru.vsu.cs.vetokhin.kg4task.math.vectors.Vector4f;
 import static ru.vsu.cs.vetokhin.kg4task.math.vectors.Vector4f.*;
 
@@ -175,12 +176,11 @@ public class Matrix4f {
     }
 
     public float determinant() {
-        return  this.v1.getX() * this.v2.getY() * this.v3.getZ() +
-                this.v1.getY() * this.v2.getZ() * this.v3.getX() +
-                this.v2.getX() * this.v3.getY() * this.v1.getZ() -
-                this.v1.getZ() * this.v2.getY() * this.v3.getX() -
-                this.v1.getY() * this.v2.getX() * this.v3.getZ() -
-                this.v1.getX() * this.v2.getZ() * this.v3.getY();
+        Matrix3f m1 = new Matrix3f(new Vector3f(this.v2.getY(), this.v2.getZ(), this.v2.getW()), new Vector3f(this.v3.getY(), this.v3.getZ(), this.v3.getW()), new Vector3f(this.v4.getY(), this.v4.getZ(), this.v4.getW()));
+        Matrix3f m2 = new Matrix3f(new Vector3f(this.v2.getX(), this.v2.getZ(), this.v2.getW()), new Vector3f(this.v3.getX(), this.v3.getZ(), this.v3.getW()), new Vector3f(this.v4.getX(), this.v4.getZ(), this.v4.getW()));
+        Matrix3f m3 = new Matrix3f(new Vector3f(this.v2.getX(), this.v2.getY(), this.v2.getW()), new Vector3f(this.v3.getX(), this.v3.getY(), this.v3.getW()), new Vector3f(this.v4.getX(), this.v4.getY(), this.v4.getW()));
+        Matrix3f m4 = new Matrix3f(new Vector3f(this.v2.getX(), this.v2.getZ(), this.v2.getZ()), new Vector3f(this.v3.getX(), this.v3.getZ(), this.v3.getZ()), new Vector3f(this.v4.getX(), this.v4.getZ(), this.v4.getZ()));
+        return this.v1.getX() * m1.determinant() - this.v1.getY() * m2.determinant() + this.v1.getZ() * m3.determinant() + this.v1.getW() * m4.determinant();
     }
 
 
